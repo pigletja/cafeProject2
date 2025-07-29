@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}메뉴 수정 - 관리자{% endblock %}
+
+{% block content %}
+<!-- 페이지 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-edit text-warning"></i> 메뉴 수정: {{ menu.name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_menu') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 메뉴 관리로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit"></i> 메뉴 정보 수정
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="menuForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">
+                                    <i class="fas fa-tag"></i> 메뉴명 *
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       required maxlength="100" value="{{ menu.name }}"
+                                       placeholder="메뉴 이름을 입력하세요">
+                                <div class="form-text">최대 100자까지 입력 가능합니다.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">
+                                    <i class="fas fa-won-sign"></i> 가격 *
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="price" name="price" 
+                                           required min="0" max="999999" step="100" 
+                                           value="{{ menu.price|int }}" placeholder="0">
+                                    <span class="input-group-text">원</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">
+                                    <i class="fas fa-folder"></i> 카테고리 *
+                                </label>
+                                <div class="input-group">
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="">카테고리 선택</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category }}" 
+                                                {{ 'selected' if category == menu.category }}>
+                                                {{ category }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">기존 카테고리를 선택하거나 새 카테고리를 추가하세요.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="temperature_option" class="form-label">
+                                    <i class="fas fa-thermometer-half"></i> 온도 옵션
+                                </label>
+                                <select class="form-select" id="temperature_option" name="temperature_option">
+                                    <option value="both" {{ 'selected' if menu.temperature_option == 'both' }}>Hot & Ice 모두</option>
+                                    <option value="hot" {{ 'selected' if menu.temperature_option == 'hot' }}>Hot 만</option>
+                                    <option value="ice" {{ 'selected' if menu.temperature_option == 'ice' }}>Ice 만</option>
+                                    <option value="none" {{ 'selected' if menu.temperature_option == 'none' }}>온도 옵션 없음</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left"></i> 메뉴 설명
+                        </label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3" maxlength="500" 
+                                  placeholder="메뉴에 대한 상세 설명을 입력하세요 (선택사항)">{{ menu.description or '' }}</textarea>
+                        <div class="form-text">최대 500자까지 입력 가능합니다.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="display_order" class="form-label">
+                            <i class="fas fa-sort-numeric-down"></i> 표시 순서
+                        </label>
+                        <input type="number" class="form-control" id="display_order" name="display_order" 
+                               min="1" max="9999" value="{{ menu.display_order }}" placeholder="9999">
+                        <div class="form-text">숫자가 작을수록 먼저 표시됩니다.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">
+                            <i class="fas fa-image"></i> 메뉴 이미지
+                        </label>
+                        {% if menu.image %}
+                            <div class="mb-2">
+                                <small class="text-muted">현재 이미지:</small>
+                                <div class="current-image-container mt-1">
+                                    <img src="{{ url_for('static', filename='uploads/' + menu.image) }}" 
+                                         class="current-image" alt="{{ menu.name }}">
+                                    <div class="current-image-overlay">
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="removeCurrentImage()">
+                                            <i class="fas fa-trash"></i> 삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="image" name="image" 
+                               accept="image/*" onchange="previewImage(this)">
+                        <div class="form-text">새 이미지를 선택하면 기존 이미지가 교체됩니다. JPG, PNG, GIF 파일만 업로드 가능합니다. (최대 16MB)</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                            <i class="fas fa-trash"></i> 메뉴 삭제
+                        </button>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary" onclick="previewMenu()">
+                                <i class="fas fa-eye"></i> 미리보기
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> 수정 저장
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 미리보기 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye"></i> 미리보기
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="menuPreview" class="menu-preview">
+                    <div class="preview-image-container">
+                        <div id="previewImagePlaceholder" class="preview-image-placeholder {{ 'd-none' if menu.image }}">
+                            <i class="fas fa-image text-muted"></i>
+                            <p class="text-muted">이미지 미리보기</p>
+                        </div>
+                        <img id="previewImage" class="preview-image {{ 'd-none' if not menu.image }}" 
+                             {% if menu.image %}src="{{ url_for('static', filename='uploads/' + menu.image) }}"{% endif %}
+                             alt="미리보기">
+                    </div>
+                    
+                    <div class="preview-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 id="previewName" class="preview-name">{{ menu.name }}</h6>
+                            <span id="previewPrice" class="badge bg-primary">{{ menu.price|currency }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <span id="previewCategory" class="badge bg-secondary">{{ menu.category }}</span>
+                            <span id="previewTemperature" class="badge bg-info">
+                                {% if menu.temperature_option == 'both' %}Hot/Ice
+                                {% elif menu.temperature_option == 'hot' %}Hot only
+                                {% elif menu.temperature_option == 'ice' %}Ice only
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <p id="previewDescription" class="text-muted small">{{ menu.description or '메뉴 설명이 여기에 표시됩니다.' }}</p>
+                        
+                        <small class="text-muted">
+                            표시 순서: <span id="previewOrder">{{ menu.display_order }}</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메뉴 정보 -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 메뉴 정보
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted mb-0">
+                    <li><strong>등록일:</strong> {{ menu.created_at.strftime('%Y년 %m월 %d일 %H:%M') }}</li>
+                    {% if menu.updated_at > menu.created_at %}
+                        <li><strong>최종 수정:</strong> {{ menu.updated_at.strftime('%Y년 %m월 %d일 %H:%M') }}</li>
+                    {% endif %}
+                    <li><strong>현재 상태:</strong> 
+                        <span class="badge bg-{{ 'danger' if menu.is_soldout else 'success' }}">
+                            {{ '품절' if menu.is_soldout else '판매중' }}
+                        </span>
+                    </li>
+                    {% if menu.image %}
+                        <li><strong>이미지:</strong> {{ menu.image }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 새 카테고리 추가 모달 -->
+<div class="modal fade" id="newCategoryModal" tabindex="-1" aria-labelledby="newCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newCategoryModalLabel">
+                    <i class="fas fa-folder-plus"></i> 새 카테고리 추가
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newCategoryName" class="form-label">카테고리명</label>
+                    <input type="text" class="form-control" id="newCategoryName" 
+                           placeholder="새 카테고리 이름을 입력하세요" maxlength="50">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="addNewCategory()">추가</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-image-container {
+        height: 200px;
+        position: relative;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-image-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        background-color: #f8f9fa;
+    }
+    
+    .preview-image-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .current-image-container {
+        position: relative;
+        display: inline-block;
+        max-width: 200px;
+    }
+    
+    .current-image {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    
+    .current-image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 8px;
+    }
+    
+    .current-image-container:hover .current-image-overlay {
+        opacity: 1;
+    }
+    
+    .preview-name {
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .menu-preview {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        background-color: #fff;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentImageRemoved = false;
+    
+    // 이미지 미리보기
+    function previewImage(input) {
+        const file = input.files[0];
+        const previewImg = document.getElementById('previewImage');
+        const placeholder = document.getElementById('previewImagePlaceholder');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('d-none');
+                placeholder.classList.add('d-none');
+                currentImageRemoved = false;
+            };
+            reader.readAsDataURL(file);
+        } else if (currentImageRemoved) {
+            previewImg.classList.add('d-none');
+            placeholder.classList.remove('d-none');
+            previewImg.src = '';
+        }
+        
+        updatePreview();
+    }
+    
+    // 현재 이미지 제거
+    function removeCurrentImage() {
+        if (confirm('현재 이미지를 삭제하시겠습니까?')) {
+            currentImageRemoved = true;
+            document.querySelector('.current-image-container').style.display = 'none';
+            document.getElementById('previewImage').classList.add('d-none');
+            document.getElementById('previewImagePlaceholder').classList.remove('d-none');
+            
+            // 숨겨진 필드 추가하여 이미지 삭제 표시
+            let removeInput = document.getElementById('remove_image');
+            if (!removeInput) {
+                removeInput = document.createElement('input');
+                removeInput.type = 'hidden';
+                removeInput.name = 'remove_image';
+                removeInput.id = 'remove_image';
+                removeInput.value = 'true';
+                document.getElementById('menuForm').appendChild(removeInput);
+            }
+        }
+    }
+    
+    // 미리보기 업데이트
+    function updatePreview() {
+        const name = document.getElementById('name').value || '메뉴명';
+        const price = document.getElementById('price').value || '0';
+        const category = document.getElementById('category').value || '카테고리';
+        const temperature = document.getElementById('temperature_option').value;
+        const description = document.getElementById('description').value || '메뉴 설명이 여기에 표시됩니다.';
+        const order = document.getElementById('display_order').value || '9999';
+        
+        document.getElementById('previewName').textContent = name;
+        document.getElementById('previewPrice').textContent = formatCurrency(parseInt(price));
+        document.getElementById('previewCategory').textContent = category;
+        document.getElementById('previewDescription').textContent = description;
+        document.getElementById('previewOrder').textContent = order;
+        
+        // 온도 옵션 표시
+        const tempBadge = document.getElementById('previewTemperature');
+        switch(temperature) {
+            case 'both':
+                tempBadge.textContent = 'Hot/Ice';
+                tempBadge.style.display = 'inline';
+                break;
+            case 'hot':
+                tempBadge.textContent = 'Hot only';
+                tempBadge.style.display = 'inline';
+                break;
+            case 'ice':
+                tempBadge.textContent = 'Ice only';
+                tempBadge.style.display = 'inline';
+                break;
+            case 'none':
+                tempBadge.style.display = 'none';
+                break;
+        }
+    }
+    
+    // 미리보기 버튼
+    function previewMenu() {
+        updatePreview();
+        document.getElementById('menuPreview').scrollIntoView({behavior: 'smooth'});
+    }
+    
+    // 메뉴 삭제 확인
+    function confirmDelete() {
+        const menuName = document.getElementById('name').value;
+        if (confirm(`"${menuName}" 메뉴를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 메뉴와 관련된 주문 데이터에 영향을 줄 수 있습니다.`)) {
+            window.location.href = '/admin/menu/delete/{{ menu.id }}';
+        }
+    }
+    
+    // 새 카테고리 추가
+    function addNewCategory() {
+        const categoryName = document.getElementById('newCategoryName').value.trim();
+        
+        if (!categoryName) {
+            alert('카테고리명을 입력해주세요.');
+            return;
+        }
+        
+        const categorySelect = document.getElementById('category');
+        
+        // 중복 확인
+        const existingOptions = Array.from(categorySelect.options).map(option => option.value);
+        if (existingOptions.includes(categoryName)) {
+            alert('이미 존재하는 카테고리입니다.');
+            return;
+        }
+        
+        // 새 옵션 추가
+        const newOption = document.createElement('option');
+        newOption.value = categoryName;
+        newOption.textContent = categoryName;
+        newOption.selected = true;
+        
+        categorySelect.appendChild(newOption);
+        
+        // 모달 닫기
+        bootstrap.Modal.getInstance(document.getElementById('newCategoryModal')).hide();
+        document.getElementById('newCategoryName').value = '';
+        
+        updatePreview();
+        showAlert('새 카테고리가 추가되었습니다.', 'success');
+    }
+    
+    // 입력 필드 이벤트 리스너
+    document.addEventListener('DOMContentLoaded', function() {
+        // 실시간 미리보기 업데이트
+        document.getElementById('name').addEventListener('input', updatePreview);
+        document.getElementById('price').addEventListener('input', updatePreview);
+        document.getElementById('category').addEventListener('change', updatePreview);
+        document.getElementById('temperature_option').addEventListener('change', updatePreview);
+        document.getElementById('description').addEventListener('input', updatePreview);
+        document.getElementById('display_order').addEventListener('input', updatePreview);
+        
+        // 폼 검증
+        document.getElementById('menuForm').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+            const category = document.getElementById('category').value;
+            
+            if (!name) {
+                e.preventDefault();
+                alert('메뉴명을 입력해주세요.');
+                document.getElementById('name').focus();
+                return;
+            }
+            
+            if (!price || price <= 0) {
+                e.preventDefault();
+                alert('올바른 가격을 입력해주세요.');
+                document.getElementById('price').focus();
+                return;
+            }
+            
+            if (!category) {
+                e.preventDefault();
+                alert('카테고리를 선택해주세요.');
+                document.getElementById('category').focus();
+                return;
+            }
+        });
+        
+        // 모달에서 Enter 키 처리
+        document.getElementById('newCategoryName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addNewCategory();
+            }
+        });
+        
+        // 초기 미리보기 설정
+        updatePreview();
+    });
+</script>
+{% endblock %} 

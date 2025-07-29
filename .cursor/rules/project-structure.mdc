@@ -1,0 +1,28 @@
+---
+alwaysApply: true
+description: Flask 카페 주문 관리 시스템 프로젝트 구조 가이드
+---
+
+# 카페 주문 관리 시스템 프로젝트 구조
+
+## 핵심 파일들
+- [app.py](mdc:cafe_management/app.py): 메인 Flask 애플리케이션 - 모든 라우트와 비즈니스 로직
+- [models.py](mdc:cafe_management/models.py): SQLAlchemy 데이터베이스 모델 (Menu, Order, OrderItem)
+- [config.py](mdc:cafe_management/config.py): Flask 설정 및 환경 변수
+
+## 템플릿 구조
+- [templates/base.html](mdc:cafe_management/templates/base.html): Bootstrap 5 기반 템플릿
+- `templates/user/`: 고객 주문 관련 페이지들
+- `templates/admin/`: 관리자 전용 페이지들
+
+## 정적 파일
+- `static/uploads/`: 메뉴 이미지 업로드 폴더
+- `static/css/`: 커스텀 CSS 파일들
+- `static/js/`: 커스텀 JavaScript 파일들
+
+## 프로젝트 특징
+- 사용자(고객)와 관리자 구분
+- 실시간 AJAX 기반 주문 관리
+- Bootstrap 5 + Font Awesome 아이콘
+- SQLite 데이터베이스 사용
+- Flask-Session으로 세션 관리

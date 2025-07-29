@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영수증 - 주문번호 #{{ order.id }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+            .print-only { display: block; }
+        }
+        
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            margin: 20px;
+            background: #f8f9fa;
+        }
+        
+        .receipt {
+            background: white;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .shop-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .shop-info {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .order-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .order-info div {
+            margin-bottom: 5px;
+        }
+        
+        .order-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .items-table th,
+        .items-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .items-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .items-table td {
+            font-size: 13px;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .total-section {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 20px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .total-final {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .print-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-preparing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-buttons no-print">
+        <button onclick="window.print()" class="btn">
+            <i class="fas fa-print"></i> 인쇄하기
+        </button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 돌아가기
+        </a>
+        <a href="{{ url_for('print_receipt_small', order_id=order.id) }}" class="btn btn-secondary">
+            <i class="fas fa-compress"></i> 작은 영수증
+        </a>
+    </div>
+
+    <div class="receipt">
+        <div class="header">
+            <div class="shop-name">카페 주문 관리 시스템</div>
+            <div class="shop-info">
+                Tel: 02-1234-5678<br>
+                영업시간: 09:00 - 22:00
+            </div>
+        </div>
+
+        <div class="order-number">
+            주문번호 #{{ order.id }}
+        </div>
+
+        <div class="order-info">
+            <div><strong>주문일시:</strong> {{ order.order_date.strftime('%Y년 %m월 %d일 %H:%M') }}</div>
+            <div><strong>고객명:</strong> {{ order.customer_name }}</div>
+            <div><strong>배달위치:</strong> {{ order.delivery_location }}</div>
+            {% if order.delivery_time %}
+                <div><strong>배달시간:</strong> {{ order.delivery_time }}</div>
+            {% endif %}
+            <div><strong>주문상태:</strong> 
+                <span class="status-badge status-{{ order.status }}">
+                    {% if order.status == 'pending' %}대기중
+                    {% elif order.status == 'preparing' %}준비중
+                    {% elif order.status == 'completed' %}완료
+                    {% elif order.status == 'cancelled' %}취소
+                    {% else %}{{ order.status }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>메뉴</th>
+                    <th class="text-center">수량</th>
+                    <th class="text-right">단가</th>
+                    <th class="text-right">소계</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.order_items %}
+                    <tr>
+                        <td>
+                            {{ item.menu.name if item.menu else '삭제된 메뉴' }}
+                            {% if item.temperature %}
+                                <br><small style="color: #666;">
+                                    {% if item.temperature == 'hot' %}
+                                        🔥 Hot
+                                    {% elif item.temperature == 'ice' %}
+                                        🧊 Ice
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                            {% if item.special_request %}
+                                <br><small style="color: #666;">📝 {{ item.special_request }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-right">{{ (item.subtotal / item.quantity)|round|int|currency }}</td>
+                        <td class="text-right">{{ item.subtotal|currency }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span>상품 총액:</span>
+                <span>{{ order.total_amount|currency }}</span>
+            </div>
+            <div class="total-row">
+                <span>할인:</span>
+                <span>0원</span>
+            </div>
+            <div class="total-row total-final">
+                <span>결제 금액:</span>
+                <span>{{ order.total_amount|currency }}</span>
+            </div>
+        </div>
+
+        {% if order.order_request %}
+            <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                <strong>요청사항:</strong><br>
+                {{ order.order_request }}
+            </div>
+        {% endif %}
+
+        <div class="footer">
+            <div>이용해 주셔서 감사합니다!</div>
+            <div>맛있게 드세요 😊</div>
+            <br>
+            <div style="font-size: 10px;">
+                출력일시: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 자동 인쇄 (URL 파라미터로 제어)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_print') === 'true') {
+            window.onload = function() {
+                window.print();
+            };
+        }
+        
+        // 통화 형식 필터 (JavaScript 버전)
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ko-KR').format(amount) + '원';
+        }
+        
+        // 현재 시간 표시 함수
+        function moment() {
+            return {
+                format: function(format) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+                    
+                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                }
+            };
+        }
+        
+        // 인쇄 후 창 닫기 옵션
+        window.addEventListener('afterprint', function() {
+            if (urlParams.get('close_after_print') === 'true') {
+                window.close();
+            }
+        });
+    </script>
+</body>
+</html> 

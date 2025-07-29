@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}매출 관리 - 관리자{% endblock %}
+
+{% block content %}
+<!-- 페이지 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-chart-line text-success"></i> 매출 대시보드
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshOrders()">
+                <i class="fas fa-sync"></i> 새로고침
+            </button>
+            <a href="{{ url_for('export_all_orders') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-download"></i> 전체 내보내기
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 매출 통계 카드 -->
+<div class="row mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="subheader">오늘 매출</div>
+                    <div class="ms-auto">
+                        <i class="fas fa-won-sign text-success"></i>
+                    </div>
+                </div>
+                <div class="h1 mb-0">{{ today_sales|currency }}</div>
+                <div class="small text-muted">
+                    <i class="fas fa-shopping-cart"></i> {{ today_count }}건 주문
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="subheader">전체 매출</div>
+                    <div class="ms-auto">
+                        <i class="fas fa-chart-bar text-primary"></i>
+                    </div>
+                </div>
+                <div class="h1 mb-0">{{ total_sales|currency }}</div>
+                <div class="small text-muted">
+                    <i class="fas fa-list"></i> {{ total_orders }}건 총 주문
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="subheader">평균 주문가</div>
+                    <div class="ms-auto">
+                        <i class="fas fa-calculator text-info"></i>
+                    </div>
+                </div>
+                <div class="h1 mb-0">
+                    {% if total_orders > 0 %}
+                        {{ (total_sales / total_orders)|round|int|currency }}
+                    {% else %}
+                        0원
+                    {% endif %}
+                </div>
+                <div class="small text-muted">
+                    <i class="fas fa-chart-pie"></i> 주문당 평균
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="subheader">오늘 주문 수</div>
+                    <div class="ms-auto">
+                        <i class="fas fa-clipboard-list text-warning"></i>
+                    </div>
+                </div>
+                <div class="h1 mb-0">{{ today_count }}</div>
+                <div class="small text-muted">
+                    <i class="fas fa-clock"></i> 오늘 접수된 주문
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 기간별 매출 조회 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-filter"></i> 기간별 매출 조회
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('filter_sales') }}" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="start_date" class="form-label">시작일</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="end_date" class="form-label">종료일</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> 조회
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- 빠른 기간 선택 버튼 -->
+                <div class="mt-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('today')">
+                            오늘
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('week')">
+                            이번 주
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('month')">
+                            이번 달
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateRange('last_month')">
+                            지난 달
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 최근 주문 목록 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock"></i> 최근 주문
+                </h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshOrders()">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <a href="{{ url_for('filter_sales') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-list"></i> 전체 목록
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if recent_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>주문번호</th>
+                                    <th>고객명</th>
+                                    <th>주문일시</th>
+                                    <th>배달위치</th>
+                                    <th>금액</th>
+                                    <th>상태</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                {% for order in recent_orders %}
+                                    <tr data-order-id="{{ order.id }}">
+                                        <td>
+                                            <strong>#{{ order.id }}</strong>
+                                        </td>
+                                        <td>{{ order.customer_name }}</td>
+                                        <td>
+                                            <small>{{ order.order_date.strftime('%m/%d %H:%M') }}</small>
+                                        </td>
+                                        <td>
+                                            <small>{{ order.delivery_location }}</small>
+                                        </td>
+                                        <td>
+                                            <strong class="text-primary">{{ order.total_amount|currency }}</strong>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select" 
+                                                    data-order-id="{{ order.id }}"
+                                                    onchange="updateOrderStatus(this)">
+                                                <option value="pending" {{ 'selected' if order.status == 'pending' }}>대기중</option>
+                                                <option value="preparing" {{ 'selected' if order.status == 'preparing' }}>준비중</option>
+                                                <option value="completed" {{ 'selected' if order.status == 'completed' }}>완료</option>
+                                                <option value="cancelled" {{ 'selected' if order.status == 'cancelled' }}>취소</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('print_receipt', order_id=order.id) }}" 
+                                                   class="btn btn-outline-info" target="_blank" 
+                                                   data-bs-toggle="tooltip" title="영수증 출력">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger delete-order-btn" 
+                                                        data-order-id="{{ order.id }}"
+                                                        data-bs-toggle="tooltip" title="주문 삭제">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">주문이 없습니다</h5>
+                        <p class="text-muted">아직 접수된 주문이 없습니다.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 기간 설정 함수
+    function setDateRange(period) {
+        const today = new Date();
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        
+        let startDate, endDate;
+        
+        switch(period) {
+            case 'today':
+                startDate = endDate = today;
+                break;
+            case 'week':
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() - today.getDay()); // 이번 주 일요일
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6); // 이번 주 토요일
+                break;
+            case 'month':
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                break;
+            case 'last_month':
+                startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+        }
+        
+        startDateInput.value = startDate.toISOString().split('T')[0];
+        endDateInput.value = endDate.toISOString().split('T')[0];
+    }
+    
+    // 주문 상태 업데이트
+    function updateOrderStatus(select) {
+        const orderId = select.getAttribute('data-order-id');
+        const newStatus = select.value;
+        
+        fetch(`/admin/update_order_status/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({status: newStatus})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('주문 상태가 업데이트되었습니다.', 'success');
+            } else {
+                showAlert('상태 업데이트에 실패했습니다: ' + (data.error || '알 수 없는 오류'), 'danger');
+                // 원래 상태로 되돌리기
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('상태 업데이트 중 오류가 발생했습니다.', 'danger');
+            location.reload();
+        });
+    }
+    
+    // 주문 삭제
+    function deleteOrder(orderId) {
+        if (!confirm('이 주문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+            return;
+        }
+        
+        fetch(`/admin/delete_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 테이블에서 해당 행 제거
+                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                if (row) {
+                    row.remove();
+                }
+                showAlert('주문이 삭제되었습니다.', 'success');
+            } else {
+                showAlert('주문 삭제에 실패했습니다: ' + (data.error || '알 수 없는 오류'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('주문 삭제 중 오류가 발생했습니다.', 'danger');
+        });
+    }
+    
+    // 주문 목록 새로고침
+    function refreshOrders() {
+        location.reload();
+    }
+    
+         // 페이지 로드 시 실행
+     document.addEventListener('DOMContentLoaded', function() {
+         // 오늘 날짜를 기본값으로 설정
+         const today = new Date().toISOString().split('T')[0];
+         if (!document.getElementById('start_date').value) {
+             document.getElementById('end_date').value = today;
+         }
+         
+         // 삭제 버튼 이벤트 리스너 등록
+         document.addEventListener('click', function(e) {
+             if (e.target.closest('.delete-order-btn')) {
+                 const button = e.target.closest('.delete-order-btn');
+                 const orderId = button.getAttribute('data-order-id');
+                 deleteOrder(orderId);
+             }
+         });
+         
+         // 자동 새로고침 (30초마다)
+         setInterval(function() {
+             // 페이지가 활성화되어 있을 때만 새로고침
+             if (!document.hidden) {
+                 refreshOrders();
+             }
+         }, 30000);
+     });
+</script>
+{% endblock %} 

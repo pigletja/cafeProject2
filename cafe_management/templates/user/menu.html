@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}메뉴 - 카페 주문 관리 시스템{% endblock %}
+
+{% block content %}
+<!-- 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-utensils text-primary"></i> 메뉴
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('view_cart') }}" class="btn btn-outline-primary position-relative">
+            <i class="fas fa-shopping-cart"></i> 장바구니
+            {% if cart_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ cart_count }}
+                </span>
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<!-- 카테고리 필터 -->
+<div class="category-filter">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="btn-group flex-wrap" role="group" aria-label="카테고리 필터">
+                <a href="{{ url_for('user_menu') }}" 
+                   class="btn {{ 'btn-primary' if not selected_category else 'btn-outline-primary' }}">
+                    <i class="fas fa-th-large"></i> 전체
+                </a>
+                {% for category in categories %}
+                    <a href="{{ url_for('user_menu', category=category) }}" 
+                       class="btn {{ 'btn-primary' if selected_category == category else 'btn-outline-primary' }}">
+                        {% if category == '커피' %}
+                            <i class="fas fa-coffee"></i>
+                        {% elif category == '차' %}
+                            <i class="fas fa-leaf"></i>
+                        {% elif category == '디저트' %}
+                            <i class="fas fa-birthday-cake"></i>
+                        {% elif category == '음료' %}
+                            <i class="fas fa-glass-water"></i>
+                        {% else %}
+                            <i class="fas fa-tag"></i>
+                        {% endif %}
+                        {{ category }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 메뉴 목록 -->
+{% if menus %}
+    <div class="row g-4">
+        {% for menu in menus %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card menu-card h-100 position-relative">
+                    <!-- 품절 오버레이 -->
+                    {% if menu.is_soldout %}
+                        <div class="soldout-overlay">
+                            <span>품절</span>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 메뉴 이미지 -->
+                    <div class="position-relative">
+                        {% if menu.image %}
+                            <img src="{{ url_for('static', filename='uploads/' + menu.image) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ menu.name }}"
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                 style="height: 200px;">
+                                <i class="fas fa-image text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 가격 태그 -->
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="price-tag">{{ menu.price|currency }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ menu.name }}</h5>
+                        {% if menu.description %}
+                            <p class="card-text text-muted small">{{ menu.description }}</p>
+                        {% endif %}
+                        
+                        <!-- 온도 옵션 표시 -->
+                        {% if menu.temperature_option != 'none' %}
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    {% if menu.temperature_option == 'both' %}
+                                        Hot / Ice
+                                    {% elif menu.temperature_option == 'hot' %}
+                                        Hot only
+                                    {% elif menu.temperature_option == 'ice' %}
+                                        Ice only
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 주문 버튼 -->
+                        {% if not menu.is_soldout %}
+                            <button type="button" 
+                                    class="btn btn-primary w-100" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#orderModal"
+                                    data-menu-id="{{ menu.id }}"
+                                    data-menu-name="{{ menu.name }}"
+                                    data-menu-price="{{ menu.price }}"
+                                    data-temperature-option="{{ menu.temperature_option }}">
+                                <i class="fas fa-cart-plus"></i> 장바구니에 담기
+                            </button>
+                        {% else %}
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i class="fas fa-times"></i> 품절
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-utensils text-muted" style="font-size: 4rem;"></i>
+        <h3 class="text-muted mt-3">메뉴가 없습니다</h3>
+        <p class="text-muted">선택한 카테고리에 메뉴가 없거나 아직 등록되지 않았습니다.</p>
+        <a href="{{ url_for('user_menu') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> 전체 메뉴 보기
+        </a>
+    </div>
+{% endif %}
+
+<!-- 주문 모달 -->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_to_cart') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderModalLabel">
+                        <i class="fas fa-cart-plus"></i> 장바구니에 추가
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="menu_id" id="modalMenuId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">선택한 메뉴</label>
+                        <div class="p-3 bg-light rounded">
+                            <h6 id="modalMenuName" class="mb-1"></h6>
+                            <span id="modalMenuPrice" class="text-primary fw-bold"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label fw-bold">수량</label>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="changeQuantity(-1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" class="form-control text-center" 
+                                   name="quantity" id="quantity" value="1" min="1" max="99">
+                            <button type="button" class="btn btn-outline-secondary" onclick="changeQuantity(1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="temperatureSection">
+                        <label class="form-label fw-bold">온도</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="temperature" id="hot" value="hot">
+                            <label class="btn btn-outline-danger" for="hot">
+                                <i class="fas fa-fire"></i> Hot
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="temperature" id="ice" value="ice" checked>
+                            <label class="btn btn-outline-info" for="ice">
+                                <i class="fas fa-snowflake"></i> Ice
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="special_request" class="form-label fw-bold">특별 요청사항</label>
+                        <textarea class="form-control" name="special_request" id="special_request" 
+                                  rows="3" placeholder="예: 설탕 추가, 연하게 등"></textarea>
+                        <div class="form-text">선택사항입니다.</div>
+                    </div>
+                    
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">총 금액:</span>
+                            <span id="totalPrice" class="h5 text-primary mb-0"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> 취소
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-cart-plus"></i> 장바구니에 추가
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPrice = 0;
+    
+    // 모달 열기 시 데이터 설정
+    document.getElementById('orderModal').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const menuId = button.getAttribute('data-menu-id');
+        const menuName = button.getAttribute('data-menu-name');
+        const menuPrice = parseFloat(button.getAttribute('data-menu-price'));
+        const temperatureOption = button.getAttribute('data-temperature-option');
+        
+        currentPrice = menuPrice;
+        
+        // 모달 내용 설정
+        document.getElementById('modalMenuId').value = menuId;
+        document.getElementById('modalMenuName').textContent = menuName;
+        document.getElementById('modalMenuPrice').textContent = formatCurrency(menuPrice);
+        
+        // 온도 옵션 처리
+        const temperatureSection = document.getElementById('temperatureSection');
+        if (temperatureOption === 'none') {
+            temperatureSection.style.display = 'none';
+        } else {
+            temperatureSection.style.display = 'block';
+            
+            const hotRadio = document.getElementById('hot');
+            const iceRadio = document.getElementById('ice');
+            
+            if (temperatureOption === 'hot') {
+                hotRadio.style.display = 'inline-block';
+                iceRadio.style.display = 'none';
+                hotRadio.checked = true;
+            } else if (temperatureOption === 'ice') {
+                hotRadio.style.display = 'none';
+                iceRadio.style.display = 'inline-block';
+                iceRadio.checked = true;
+            } else { // both
+                hotRadio.style.display = 'inline-block';
+                iceRadio.style.display = 'inline-block';
+                iceRadio.checked = true;
+            }
+        }
+        
+        // 수량 초기화
+        document.getElementById('quantity').value = 1;
+        document.getElementById('special_request').value = '';
+        
+        // 총 금액 업데이트
+        updateTotalPrice();
+    });
+    
+    // 수량 변경
+    function changeQuantity(delta) {
+        const quantityInput = document.getElementById('quantity');
+        let quantity = parseInt(quantityInput.value) || 1;
+        quantity += delta;
+        
+        if (quantity < 1) quantity = 1;
+        if (quantity > 99) quantity = 99;
+        
+        quantityInput.value = quantity;
+        updateTotalPrice();
+    }
+    
+    // 총 금액 업데이트
+    function updateTotalPrice() {
+        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+        const total = currentPrice * quantity;
+        document.getElementById('totalPrice').textContent = formatCurrency(total);
+    }
+    
+    // 수량 입력 시 총 금액 업데이트
+    document.getElementById('quantity').addEventListener('input', updateTotalPrice);
+    
+    // 카드 호버 효과
+    document.querySelectorAll('.menu-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            if (!this.querySelector('.soldout-overlay')) {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+</script>
+{% endblock %} 

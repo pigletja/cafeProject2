@@ -1,0 +1,64 @@
+---
+globs: *.css,*.html
+description: CSS 스타일링 및 Bootstrap 커스터마이징 규칙
+---
+
+# CSS 스타일링 규칙
+
+## Bootstrap 5 커스터마이징
+- 기본 Bootstrap 클래스 우선 사용
+- 커스텀 CSS는 최소한으로 유지
+- Bootstrap 변수 오버라이드 권장
+
+## 컴포넌트별 스타일링
+
+### 메뉴 카드 (.menu-item)
+```css
+.menu-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+```
+
+### 관리자 사이드바 (.admin-sidebar)
+- 고정 너비: 250px
+- 배경색: #343a40 (Bootstrap dark)
+- 링크 호버 효과 포함
+
+### 장바구니 배지 (.cart-badge)
+- 위치: absolute, top-right
+- 애니메이션: pulse 효과
+- 색상: Bootstrap danger
+
+## 반응형 디자인
+- 모바일 우선 설계
+- Bootstrap 그리드 시스템 활용
+- breakpoint: xs(576px), sm(768px), md(992px), lg(1200px)
+
+## 색상 팔레트
+- Primary: #007bff (Bootstrap 기본)
+- Success: #28a745 (완료 상태)
+- Warning: #ffc107 (대기 상태)
+- Danger: #dc3545 (취소/삭제)
+- Secondary: #6c757d (비활성)
+
+## 애니메이션 및 전환
+- transition: 0.3s ease 기본값
+- hover 효과: transform scale/translateY
+- 로딩 상태: spinner 또는 skeleton UI
+
+## 폰트 및 타이포그래피
+- 기본 폰트: 시스템 폰트 스택
+- 한글: 'Malgun Gothic', 'Apple SD Gothic Neo'
+- 아이콘: Font Awesome 5.15+
+
+## 네이밍 컨벤션
+- BEM 방법론 부분 적용
+- 컴포넌트별 접두사 사용
+- 상태 클래스: .active, .disabled, .loading
+- 유틸리티 클래스: Bootstrap 우선

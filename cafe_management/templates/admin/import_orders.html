@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}주문 데이터 가져오기 - 관리자{% endblock %}
+
+{% block content %}
+<!-- 페이지 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-file-import text-primary"></i> 주문 데이터 가져오기
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 대시보드로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 파일 업로드 -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-upload"></i> Excel 파일 업로드
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="importForm">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file-excel"></i> Excel 파일 선택 *
+                        </label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".xlsx,.xls" required onchange="validateFile(this)">
+                        <div class="form-text">
+                            Excel 파일(.xlsx, .xls)만 업로드 가능합니다. 최대 50MB까지 지원합니다.
+                        </div>
+                    </div>
+                    
+                    <!-- 파일 정보 표시 -->
+                    <div id="fileInfo" class="alert alert-info d-none">
+                        <h6><i class="fas fa-info-circle"></i> 선택된 파일 정보</h6>
+                        <ul class="mb-0">
+                            <li><strong>파일명:</strong> <span id="fileName"></span></li>
+                            <li><strong>파일 크기:</strong> <span id="fileSize"></span></li>
+                            <li><strong>파일 형식:</strong> <span id="fileType"></span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="skipDuplicates" name="skip_duplicates" checked>
+                                <label class="form-check-label" for="skipDuplicates">
+                                    중복 데이터 건너뛰기
+                                </label>
+                                <div class="form-text">동일한 주문번호가 있는 경우 건너뜁니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="validateData" name="validate_data" checked>
+                                <label class="form-check-label" for="validateData">
+                                    데이터 유효성 검사
+                                </label>
+                                <div class="form-text">잘못된 형식의 데이터를 사전에 검사합니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                            <i class="fas fa-cloud-upload-alt"></i> 데이터 가져오기
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- 진행 상황 표시 -->
+                <div id="uploadProgress" class="mt-3 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>업로드 진행률</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 가져오기 결과 -->
+        <div id="importResult" class="card mt-3 d-none">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle text-success"></i> 가져오기 결과
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="metric">
+                            <div class="metric-value text-primary" id="totalRows">0</div>
+                            <div class="metric-label">총 행 수</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric">
+                            <div class="metric-value text-success" id="successRows">0</div>
+                            <div class="metric-label">성공</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric">
+                            <div class="metric-value text-warning" id="skippedRows">0</div>
+                            <div class="metric-label">건너뜀</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric">
+                            <div class="metric-value text-danger" id="errorRows">0</div>
+                            <div class="metric-label">오류</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="errorDetails" class="mt-3 d-none">
+                    <h6>오류 상세 내용</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>행 번호</th>
+                                    <th>오류 내용</th>
+                                </tr>
+                            </thead>
+                            <tbody id="errorTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 도움말 및 템플릿 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-download"></i> 템플릿 다운로드
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">올바른 형식의 Excel 파일을 만들기 위해 템플릿을 다운로드하세요.</p>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-primary" onclick="downloadTemplate()">
+                        <i class="fas fa-file-excel"></i> 주문 템플릿 다운로드
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 데이터 형식 안내
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">필수 컬럼</h6>
+                <ul class="small mb-3">
+                    <li><strong>고객명:</strong> 주문자 이름</li>
+                    <li><strong>배달위치:</strong> 배달 받을 위치</li>
+                    <li><strong>총액:</strong> 주문 총 금액 (숫자)</li>
+                </ul>
+                
+                <h6 class="text-primary">선택 컬럼</h6>
+                <ul class="small mb-3">
+                    <li><strong>배달시간:</strong> 희망 배달 시간</li>
+                    <li><strong>주문요청사항:</strong> 특별 요청 사항</li>
+                    <li><strong>상태:</strong> pending, preparing, completed, cancelled</li>
+                </ul>
+                
+                <h6 class="text-primary">주의사항</h6>
+                <ul class="small text-muted mb-0">
+                    <li>첫 번째 행은 헤더로 인식됩니다.</li>
+                    <li>빈 행은 자동으로 건너뜁니다.</li>
+                    <li>잘못된 형식의 데이터는 오류로 표시됩니다.</li>
+                    <li>기존 주문번호와 중복되는 경우 건너뜁니다.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-history"></i> 최근 가져오기 기록
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">주문 데이터 가져오기</h6>
+                            <p class="timeline-text small text-muted">150개 행 중 148개 성공</p>
+                            <small class="text-muted">2시간 전</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">데이터 검증 오류</h6>
+                            <p class="timeline-text small text-muted">5개 행에서 오류 발생</p>
+                            <small class="text-muted">1일 전</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric {
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+    }
+    
+    .timeline-content {
+        margin-left: 1rem;
+    }
+    
+    .timeline-title {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .timeline-text {
+        margin-bottom: 0.25rem;
+    }
+    
+    .progress {
+        height: 8px;
+    }
+    
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 파일 검증
+    function validateFile(input) {
+        const file = input.files[0];
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        if (!file) {
+            fileInfo.classList.add('d-none');
+            uploadBtn.disabled = true;
+            return;
+        }
+        
+        // 파일 크기 검사 (50MB)
+        const maxSize = 50 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('파일 크기가 너무 큽니다. 50MB 이하의 파일을 선택해주세요.');
+            input.value = '';
+            fileInfo.classList.add('d-none');
+            uploadBtn.disabled = true;
+            return;
+        }
+        
+        // 파일 형식 검사
+        const allowedTypes = ['.xlsx', '.xls'];
+        const fileName = file.name.toLowerCase();
+        const isValidType = allowedTypes.some(type => fileName.endsWith(type));
+        
+        if (!isValidType) {
+            alert('Excel 파일(.xlsx, .xls)만 업로드 가능합니다.');
+            input.value = '';
+            fileInfo.classList.add('d-none');
+            uploadBtn.disabled = true;
+            return;
+        }
+        
+        // 파일 정보 표시
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        document.getElementById('fileType').textContent = getFileExtension(file.name);
+        
+        fileInfo.classList.remove('d-none');
+        uploadBtn.disabled = false;
+    }
+    
+    // 파일 크기 포맷팅
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // 파일 확장자 추출
+    function getFileExtension(filename) {
+        return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+    }
+    
+    // 템플릿 다운로드
+    function downloadTemplate() {
+        // 실제로는 서버에서 템플릿 파일을 제공해야 함
+        const templateData = [
+            ['고객명', '배달위치', '총액', '배달시간', '주문요청사항', '상태'],
+            ['홍길동', '3층 사무실', '15000', '오후 2시', '얼음 많이', 'pending'],
+            ['김철수', '1층 로비', '8000', '', '', 'completed']
+        ];
+        
+        const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, '주문데이터');
+        
+        XLSX.writeFile(workbook, '주문_데이터_템플릿.xlsx');
+    }
+    
+    // 폼 제출 처리
+    document.getElementById('importForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        // 업로드 시작
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
+        uploadProgress.classList.remove('d-none');
+        
+        // 진행률 시뮬레이션
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 20;
+            if (progress > 90) progress = 90;
+            
+            progressBar.style.width = progress + '%';
+            progressText.textContent = Math.round(progress) + '%';
+        }, 500);
+        
+        // 실제 업로드
+        fetch('/admin/import_orders', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+            
+            setTimeout(() => {
+                showImportResult(data);
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> 데이터 가져오기';
+                uploadProgress.classList.add('d-none');
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            console.error('Error:', error);
+            alert('파일 업로드 중 오류가 발생했습니다.');
+            
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> 데이터 가져오기';
+            uploadProgress.classList.add('d-none');
+        });
+    });
+    
+    // 가져오기 결과 표시
+    function showImportResult(data) {
+        const resultCard = document.getElementById('importResult');
+        
+        document.getElementById('totalRows').textContent = data.total || 0;
+        document.getElementById('successRows').textContent = data.success || 0;
+        document.getElementById('skippedRows').textContent = data.skipped || 0;
+        document.getElementById('errorRows').textContent = data.errors ? data.errors.length : 0;
+        
+        // 오류 상세 내용 표시
+        if (data.errors && data.errors.length > 0) {
+            const errorDetails = document.getElementById('errorDetails');
+            const errorTableBody = document.getElementById('errorTableBody');
+            
+            errorTableBody.innerHTML = '';
+            data.errors.forEach(error => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${error.row}</td>
+                    <td>${error.message}</td>
+                `;
+                errorTableBody.appendChild(row);
+            });
+            
+            errorDetails.classList.remove('d-none');
+        }
+        
+        resultCard.classList.remove('d-none');
+        resultCard.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // 페이지 로드 시 실행
+    document.addEventListener('DOMContentLoaded', function() {
+        // 초기 상태 설정
+        document.getElementById('uploadBtn').disabled = true;
+        
+        // SheetJS 라이브러리 동적 로드 (템플릿 다운로드용)
+        if (typeof XLSX === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            document.head.appendChild(script);
+        }
+    });
+</script>
+{% endblock %} 

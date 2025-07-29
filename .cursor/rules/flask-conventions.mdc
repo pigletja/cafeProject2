@@ -1,0 +1,35 @@
+---
+globs: *.py
+description: Flask 애플리케이션 개발 컨벤션
+---
+
+# Flask 애플리케이션 개발 규칙
+
+## 라우트 명명 규칙
+- 사용자 라우트: `/` (메인), `/user_menu`, `/view_cart`, `/add_to_cart`, `/place_order`
+- 관리자 라우트: `/admin/`로 시작 (예: `/admin/dashboard`, `/admin/menu`)
+- API 라우트: AJAX 요청은 JSON 응답 반환
+
+## 함수 명명 규칙
+- 라우트 함수: 명확한 동사 + 명사 (예: `add_menu`, `edit_menu`, `delete_order`)
+- 유틸리티 함수: `admin_required`, `allowed_file` 등 용도가 명확한 이름
+
+## 에러 처리
+- try-catch 블록으로 데이터베이스 에러 처리
+- flash 메시지로 사용자에게 피드백 제공
+- JSON API는 success/error 필드 포함
+
+## 세션 관리
+- 관리자 로그인: `session['admin_logged_in'] = True`
+- 장바구니: `session['cart']`로 관리
+- 세션 데이터 검증 필수
+
+## 데이터베이스 조작
+- SQLAlchemy ORM 사용
+- commit() 후 예외 처리
+- 관계형 데이터는 lazy loading 고려
+
+## 파일 업로드
+- `allowed_file()` 함수로 확장자 검증
+- `secure_filename()` 사용
+- 업로드 크기 제한 확인

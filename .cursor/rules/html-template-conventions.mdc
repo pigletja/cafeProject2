@@ -1,0 +1,44 @@
+---
+globs: *.html
+description: HTML 템플릿 및 Jinja2 사용 규칙
+---
+
+# HTML 템플릿 개발 규칙
+
+## 템플릿 상속
+- 모든 페이지는 [base.html](mdc:cafe_management/templates/base.html) 상속
+- `{% extends "base.html" %}` 사용
+- `{% block title %}`, `{% block content %}`, `{% block extra_css %}`, `{% block extra_js %}` 블록 활용
+
+## Bootstrap 5 사용 규칙
+- 반응형 그리드: `container` > `row` > `col-*` 구조
+- 카드 컴포넌트: 메뉴, 주문 정보 표시
+- 모달: 확인 대화상자, 폼 입력
+- 버튼: `btn` + `btn-primary/secondary/danger` 클래스
+
+## Font Awesome 아이콘
+- 일관된 아이콘 사용: `fas fa-coffee` (커피), `fas fa-shopping-cart` (장바구니)
+- 버튼과 함께 사용: `<i class="fas fa-plus"></i> 추가`
+
+## Jinja2 템플릿 문법
+- URL 생성: `{{ url_for('function_name') }}`
+- 조건문: `{% if condition %}...{% endif %}`
+- 반복문: `{% for item in items %}...{% endfor %}`
+- 필터 사용: `{{ price|currency }}`, `{{ date|strftime('%Y-%m-%d') }}`
+
+## JavaScript 통합
+- AJAX 요청은 fetch API 사용
+- JSON 데이터 주고받기
+- DOM 조작 시 querySelector 사용
+- 전역 함수: `showAlert()`, `formatCurrency()`, `confirmAction()`
+
+## CSS 클래스 명명
+- 컴포넌트별 접두사: `.menu-item`, `.order-card`, `.admin-sidebar`
+- 상태 클래스: `.active`, `.disabled`, `.loading`
+- Bootstrap 클래스와 충돌 방지
+
+## 접근성 고려사항
+- 적절한 alt 텍스트
+- aria-label 속성 사용
+- 키보드 네비게이션 지원
+- 의미있는 HTML 구조

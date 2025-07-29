@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 로그인 - 카페 주문 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header text-center bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-shield"></i> 관리자 로그인
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user"></i> 사용자명
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               required maxlength="50" placeholder="관리자 아이디를 입력하세요">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> 비밀번호
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               required maxlength="100" placeholder="비밀번호를 입력하세요">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> 로그인
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted">
+                <small>
+                    <i class="fas fa-info-circle"></i> 
+                    관리자 계정으로만 접근 가능합니다
+                </small>
+            </div>
+        </div>
+        
+        <!-- 사용자 페이지로 돌아가기 -->
+        <div class="text-center mt-3">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 메인 페이지로 돌아가기
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 15px;
+        margin-top: 100px;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        border: none;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .btn-primary {
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-outline-secondary {
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #333;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 첫 번째 입력 필드에 포커스
+        document.getElementById('username').focus();
+        
+        // 폼 검증
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username) {
+                e.preventDefault();
+                alert('사용자명을 입력해주세요.');
+                document.getElementById('username').focus();
+                return;
+            }
+            
+            if (!password) {
+                e.preventDefault();
+                alert('비밀번호를 입력해주세요.');
+                document.getElementById('password').focus();
+                return;
+            }
+        });
+        
+        // Enter 키로 폼 제출
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('form').submit();
+            }
+        });
+    });
+</script>
+{% endblock %} 

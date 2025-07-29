@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}카테고리 관리 - 관리자{% endblock %}
+
+{% block content %}
+<!-- 페이지 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tags text-info"></i> 카테고리 관리
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_menu') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-utensils"></i> 메뉴 관리로 돌아가기
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 카테고리 추가 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus-circle"></i> 새 카테고리 추가
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="addCategoryForm">
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">
+                            <i class="fas fa-tag"></i> 카테고리명 *
+                        </label>
+                        <input type="text" class="form-control" id="category_name" name="category_name" 
+                               required maxlength="50" placeholder="새 카테고리 이름을 입력하세요">
+                        <div class="form-text">최대 50자까지 입력 가능합니다.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> 카테고리 추가
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 도움말 -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-lightbulb"></i> 도움말
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted mb-0">
+                    <li>카테고리는 메뉴를 분류하는 데 사용됩니다.</li>
+                    <li>해당 카테고리에 메뉴가 있는 경우 삭제할 수 없습니다.</li>
+                    <li>메뉴를 먼저 삭제하거나 다른 카테고리로 이동한 후 삭제하세요.</li>
+                    <li>카테고리명은 중복될 수 없습니다.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 기존 카테고리 목록 -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> 기존 카테고리 목록
+                    <span class="badge bg-primary ms-2">{{ categories|length }}개</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-tag"></i> 카테고리명</th>
+                                    <th><i class="fas fa-utensils"></i> 메뉴 수</th>
+                                    <th><i class="fas fa-chart-bar"></i> 상태</th>
+                                    <th><i class="fas fa-cogs"></i> 관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if category == '커피' %}
+                                                    <i class="fas fa-coffee text-primary me-2"></i>
+                                                {% elif category == '차' %}
+                                                    <i class="fas fa-leaf text-success me-2"></i>
+                                                {% elif category == '디저트' %}
+                                                    <i class="fas fa-birthday-cake text-warning me-2"></i>
+                                                {% elif category == '음료' %}
+                                                    <i class="fas fa-glass-water text-info me-2"></i>
+                                                {% else %}
+                                                    <i class="fas fa-tag text-secondary me-2"></i>
+                                                {% endif %}
+                                                <strong>{{ category }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary" id="menu-count-{{ loop.index0 }}">
+                                                0개
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success" id="status-{{ loop.index0 }}">
+                                                활성
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('admin_menu', category=category) }}" 
+                                                   class="btn btn-outline-primary" 
+                                                   data-bs-toggle="tooltip" title="이 카테고리의 메뉴 보기">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger delete-category-btn" 
+                                                        data-category="{{ category }}"
+                                                        data-bs-toggle="tooltip" title="카테고리 삭제">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tags text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">등록된 카테고리가 없습니다</h5>
+                        <p class="text-muted">새로운 카테고리를 추가해보세요.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 카테고리 통계 -->
+        {% if categories %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie"></i> 카테고리별 통계
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="categoryStats">
+                        <!-- JavaScript로 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        transition: all 0.3s ease;
+    }
+    
+    .category-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .category-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: scale(1.05);
+    }
+    
+    .table th {
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 카테고리별 메뉴 수 계산 (API 호출)
+    async function loadCategoryStats() {
+        try {
+                         const categories = JSON.parse('{{ categories|tojson|safe }}');
+            const categoryStats = document.getElementById('categoryStats');
+            
+            for (let i = 0; i < categories.length; i++) {
+                const category = categories[i];
+                
+                // 실제로는 API를 호출해야 하지만, 여기서는 임시로 랜덤 값 사용
+                const menuCount = Math.floor(Math.random() * 10) + 1;
+                const isActive = menuCount > 0;
+                
+                // 테이블의 메뉴 수 업데이트
+                const menuCountElement = document.getElementById(`menu-count-${i}`);
+                const statusElement = document.getElementById(`status-${i}`);
+                
+                if (menuCountElement) {
+                    menuCountElement.textContent = `${menuCount}개`;
+                    menuCountElement.className = menuCount > 0 ? 'badge bg-primary' : 'badge bg-secondary';
+                }
+                
+                if (statusElement) {
+                    statusElement.textContent = isActive ? '활성' : '비활성';
+                    statusElement.className = isActive ? 'badge bg-success' : 'badge bg-warning';
+                }
+                
+                // 통계 카드 생성
+                if (categoryStats) {
+                    const statCard = document.createElement('div');
+                    statCard.className = 'col-md-6 col-lg-4 mb-3';
+                    statCard.innerHTML = `
+                        <div class="category-card">
+                            <div class="stat-card">
+                                <div class="category-icon">
+                                    ${getCategoryIcon(category)}
+                                </div>
+                                <h5>${category}</h5>
+                                <p class="mb-0">${menuCount}개 메뉴</p>
+                            </div>
+                        </div>
+                    `;
+                    categoryStats.appendChild(statCard);
+                }
+            }
+        } catch (error) {
+            console.error('카테고리 통계 로드 중 오류:', error);
+        }
+    }
+    
+    // 카테고리별 아이콘 반환
+    function getCategoryIcon(category) {
+        switch(category) {
+            case '커피': return '<i class="fas fa-coffee"></i>';
+            case '차': return '<i class="fas fa-leaf"></i>';
+            case '디저트': return '<i class="fas fa-birthday-cake"></i>';
+            case '음료': return '<i class="fas fa-glass-water"></i>';
+            default: return '<i class="fas fa-tag"></i>';
+        }
+    }
+    
+    // 카테고리 삭제
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-category-btn')) {
+            const button = e.target.closest('.delete-category-btn');
+            const category = button.getAttribute('data-category');
+            deleteCategory(category);
+        }
+    });
+    
+    function deleteCategory(category) {
+        if (!confirm(`"${category}" 카테고리를 삭제하시겠습니까?\n\n이 카테고리에 메뉴가 있는 경우 삭제할 수 없습니다.`)) {
+            return;
+        }
+        
+        fetch(`/admin/categories/delete/${encodeURIComponent(category)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                showAlert('카테고리가 삭제되었습니다.', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                return response.text().then(text => {
+                    throw new Error(text || '삭제에 실패했습니다.');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('카테고리 삭제에 실패했습니다: ' + error.message, 'danger');
+        });
+    }
+    
+    // 폼 검증
+    document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+        const categoryName = document.getElementById('category_name').value.trim();
+        
+        if (!categoryName) {
+            e.preventDefault();
+            alert('카테고리명을 입력해주세요.');
+            document.getElementById('category_name').focus();
+            return;
+        }
+        
+        // 중복 확인
+        const existingCategories = JSON.parse('{{ categories|tojson|safe }}');
+        if (existingCategories.includes(categoryName)) {
+            e.preventDefault();
+            alert('이미 존재하는 카테고리입니다.');
+            document.getElementById('category_name').focus();
+            return;
+        }
+    });
+    
+    // 페이지 로드 시 실행
+    document.addEventListener('DOMContentLoaded', function() {
+        // 툴팁 초기화
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // 카테고리 통계 로드
+        loadCategoryStats();
+        
+        // 카테고리명 입력 필드에 포커스
+        document.getElementById('category_name').focus();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}메뉴 관리 - 관리자{% endblock %}
+
+{% block content %}
+<!-- 페이지 헤더 -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-utensils text-primary"></i> 메뉴 관리
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('add_menu') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 메뉴 추가
+            </a>
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleSortMode()">
+                <i class="fas fa-sort"></i> 순서 변경
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 카테고리 필터 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="btn-group flex-wrap" role="group" aria-label="카테고리 필터">
+            <a href="{{ url_for('admin_menu') }}" 
+               class="btn {{ 'btn-primary' if not selected_category else 'btn-outline-primary' }}">
+                <i class="fas fa-th-large"></i> 전체 ({{ menus|length }})
+            </a>
+            {% for category in categories %}
+                <a href="{{ url_for('admin_menu', category=category) }}" 
+                   class="btn {{ 'btn-primary' if selected_category == category else 'btn-outline-primary' }}">
+                    {% if category == '커피' %}
+                        <i class="fas fa-coffee"></i>
+                    {% elif category == '차' %}
+                        <i class="fas fa-leaf"></i>
+                    {% elif category == '디저트' %}
+                        <i class="fas fa-birthday-cake"></i>
+                    {% elif category == '음료' %}
+                        <i class="fas fa-glass-water"></i>
+                    {% else %}
+                        <i class="fas fa-tag"></i>
+                    {% endif %}
+                    {{ category }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 메뉴 목록 -->
+{% if menus %}
+    <div id="menuContainer" class="row g-4">
+        {% for menu in menus %}
+            <div class="col-lg-4 col-md-6" data-menu-id="{{ menu.id }}" data-display-order="{{ menu.display_order }}">
+                <div class="card menu-item h-100 position-relative">
+                    <!-- 품절 오버레이 -->
+                    {% if menu.is_soldout %}
+                        <div class="soldout-overlay">
+                            <span>품절</span>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 순서 변경 핸들 -->
+                    <div class="sort-handle d-none position-absolute top-0 start-0 p-2" style="z-index: 10;">
+                        <i class="fas fa-grip-vertical text-muted"></i>
+                    </div>
+                    
+                    <!-- 메뉴 이미지 -->
+                    <div class="position-relative">
+                        {% if menu.image %}
+                            <img src="{{ url_for('static', filename='uploads/' + menu.image) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ menu.name }}"
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                 style="height: 200px;">
+                                <i class="fas fa-image text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 관리 버튼 -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <div class="btn-group-vertical btn-group-sm">
+                                <a href="{{ url_for('edit_menu', menu_id=menu.id) }}" 
+                                   class="btn btn-primary btn-sm" data-bs-toggle="tooltip" title="수정">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm delete-menu-btn" 
+                                        data-menu-id="{{ menu.id }}" data-menu-name="{{ menu.name }}"
+                                        data-bs-toggle="tooltip" title="삭제">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ menu.name }}</h5>
+                            <span class="badge bg-primary">{{ menu.price|currency }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-secondary">{{ menu.category }}</span>
+                            {% if menu.temperature_option != 'none' %}
+                                <span class="badge bg-info">
+                                    {% if menu.temperature_option == 'both' %}
+                                        Hot/Ice
+                                    {% elif menu.temperature_option == 'hot' %}
+                                        Hot only
+                                    {% elif menu.temperature_option == 'ice' %}
+                                        Ice only
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                            <span class="badge bg-light text-dark">순서: {{ menu.display_order }}</span>
+                        </div>
+                        
+                        {% if menu.description %}
+                            <p class="card-text text-muted small">{{ menu.description }}</p>
+                        {% endif %}
+                        
+                        <!-- 품절 토글 버튼 -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <button type="button" class="btn btn-sm toggle-soldout-btn
+                                    {{ 'btn-success' if menu.is_soldout else 'btn-warning' }}" 
+                                    data-menu-id="{{ menu.id }}">
+                                {% if menu.is_soldout %}
+                                    <i class="fas fa-check"></i> 판매 재개
+                                {% else %}
+                                    <i class="fas fa-times"></i> 품절 설정
+                                {% endif %}
+                            </button>
+                            
+                            <small class="text-muted">
+                                등록: {{ menu.created_at.strftime('%m/%d') }}
+                                {% if menu.updated_at > menu.created_at %}
+                                    | 수정: {{ menu.updated_at.strftime('%m/%d') }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 순서 변경 모드 안내 -->
+    <div id="sortModeAlert" class="alert alert-info d-none mt-3">
+        <i class="fas fa-info-circle"></i>
+        <strong>순서 변경 모드</strong>가 활성화되었습니다. 메뉴를 드래그하여 순서를 변경하고 "저장" 버튼을 클릭하세요.
+        <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="saveSortOrder()">
+            <i class="fas fa-save"></i> 순서 저장
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary ms-1" onclick="cancelSort()">
+            <i class="fas fa-times"></i> 취소
+        </button>
+    </div>
+    
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-utensils text-muted" style="font-size: 4rem;"></i>
+        <h3 class="text-muted mt-3">등록된 메뉴가 없습니다</h3>
+        <p class="text-muted">새로운 메뉴를 추가해보세요.</p>
+        <a href="{{ url_for('add_menu') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i> 첫 메뉴 추가하기
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .menu-item {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .menu-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .sort-mode .menu-item {
+        cursor: move;
+    }
+    
+    .sort-mode .sort-handle {
+        display: block !important;
+    }
+    
+    .sortable-ghost {
+        opacity: 0.5;
+    }
+    
+    .sortable-chosen {
+        transform: rotate(5deg);
+    }
+    
+    .soldout-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        z-index: 5;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Sortable.js for drag & drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+    let sortable = null;
+    let sortMode = false;
+    let originalOrder = [];
+
+    // 품절 상태 토글
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.toggle-soldout-btn')) {
+            const button = e.target.closest('.toggle-soldout-btn');
+            const menuId = button.getAttribute('data-menu-id');
+            toggleSoldout(menuId, button);
+        }
+        
+        if (e.target.closest('.delete-menu-btn')) {
+            const button = e.target.closest('.delete-menu-btn');
+            const menuId = button.getAttribute('data-menu-id');
+            const menuName = button.getAttribute('data-menu-name');
+            deleteMenu(menuId, menuName);
+        }
+    });
+
+    function toggleSoldout(menuId, button) {
+        fetch(`/admin/menu/toggle_soldout/${menuId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 버튼 상태 업데이트
+                if (data.is_soldout) {
+                    button.className = 'btn btn-sm toggle-soldout-btn btn-success';
+                    button.innerHTML = '<i class="fas fa-check"></i> 판매 재개';
+                    
+                    // 품절 오버레이 추가
+                    const card = button.closest('.menu-item');
+                    if (!card.querySelector('.soldout-overlay')) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'soldout-overlay';
+                        overlay.innerHTML = '<span>품절</span>';
+                        card.querySelector('.position-relative').appendChild(overlay);
+                    }
+                } else {
+                    button.className = 'btn btn-sm toggle-soldout-btn btn-warning';
+                    button.innerHTML = '<i class="fas fa-times"></i> 품절 설정';
+                    
+                    // 품절 오버레이 제거
+                    const overlay = button.closest('.menu-item').querySelector('.soldout-overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                }
+                
+                showAlert(`메뉴가 ${data.status}로 변경되었습니다.`, 'success');
+            } else {
+                showAlert('상태 변경에 실패했습니다: ' + (data.error || '알 수 없는 오류'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('상태 변경 중 오류가 발생했습니다.', 'danger');
+        });
+    }
+
+    function deleteMenu(menuId, menuName) {
+        if (!confirm(`"${menuName}" 메뉴를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 메뉴와 관련된 주문 데이터에 영향을 줄 수 있습니다.`)) {
+            return;
+        }
+
+        window.location.href = `/admin/menu/delete/${menuId}`;
+    }
+
+    function toggleSortMode() {
+        sortMode = !sortMode;
+        const container = document.getElementById('menuContainer');
+        const alert = document.getElementById('sortModeAlert');
+        
+        if (sortMode) {
+            // 순서 변경 모드 활성화
+            document.body.classList.add('sort-mode');
+            alert.classList.remove('d-none');
+            
+            // 원래 순서 저장
+            originalOrder = Array.from(container.children).map(item => ({
+                id: item.getAttribute('data-menu-id'),
+                order: item.getAttribute('data-display-order')
+            }));
+            
+            // Sortable 초기화
+            sortable = Sortable.create(container, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                handle: '.menu-item'
+            });
+            
+            // 핸들 표시
+            document.querySelectorAll('.sort-handle').forEach(handle => {
+                handle.classList.remove('d-none');
+            });
+            
+        } else {
+            // 순서 변경 모드 비활성화
+            cancelSort();
+        }
+    }
+
+    function saveSortOrder() {
+        const container = document.getElementById('menuContainer');
+        const menuOrders = Array.from(container.children).map((item, index) => ({
+            id: parseInt(item.getAttribute('data-menu-id')),
+            order: index + 1
+        }));
+
+        fetch('/admin/menu/update_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({menu_orders: menuOrders})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('메뉴 순서가 저장되었습니다.', 'success');
+                cancelSort();
+                // 페이지 새로고침하여 변경된 순서 반영
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('순서 저장에 실패했습니다: ' + (data.error || '알 수 없는 오류'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('순서 저장 중 오류가 발생했습니다.', 'danger');
+        });
+    }
+
+    function cancelSort() {
+        sortMode = false;
+        document.body.classList.remove('sort-mode');
+        document.getElementById('sortModeAlert').classList.add('d-none');
+        
+        if (sortable) {
+            sortable.destroy();
+            sortable = null;
+        }
+        
+        // 핸들 숨기기
+        document.querySelectorAll('.sort-handle').forEach(handle => {
+            handle.classList.add('d-none');
+        });
+        
+        // 원래 순서로 되돌리기
+        if (originalOrder.length > 0) {
+            const container = document.getElementById('menuContainer');
+            const items = Array.from(container.children);
+            
+            originalOrder.forEach(original => {
+                const item = items.find(item => item.getAttribute('data-menu-id') === original.id);
+                if (item) {
+                    container.appendChild(item);
+                }
+            });
+        }
+    }
+
+    // 페이지 로드 시 툴팁 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %} 

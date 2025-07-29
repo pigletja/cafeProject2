@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}카페 주문 관리 시스템 - 메인{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center p-3 my-3 text-white bg-primary rounded shadow-sm">
+    <i class="fas fa-coffee me-3" style="font-size: 2rem;"></i>
+    <div class="lh-1">
+        <h1 class="h6 mb-0 text-white lh-1">카페 주문 관리 시스템</h1>
+        <small>Coffee Order Management System</small>
+    </div>
+</div>
+
+<div class="my-3 p-3 bg-body rounded shadow-sm">
+    <h6 class="border-bottom pb-2 mb-3">
+        <i class="fas fa-home"></i> 메인 메뉴
+    </h6>
+    
+    <div class="row g-4">
+        <!-- 사용자 메뉴 -->
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-user-friends text-primary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="card-title text-primary mb-3">고객 주문</h3>
+                    <p class="card-text text-muted mb-4">
+                        메뉴를 확인하고 주문하실 수 있습니다.<br>
+                        간편하게 장바구니에 담고 주문해보세요!
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('user_menu') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-utensils me-2"></i>
+                            메뉴 보기 & 주문하기
+                        </a>
+                        <a href="{{ url_for('view_cart') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            장바구니 보기
+                            {% if cart_count > 0 %}
+                                <span class="badge bg-danger ms-1">{{ cart_count }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 관리자 메뉴 -->
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-user-shield text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="card-title text-success mb-3">관리자 모드</h3>
+                    <p class="card-text text-muted mb-4">
+                        메뉴 관리, 주문 관리, 매출 분석 등<br>
+                        카페 운영에 필요한 모든 기능을 제공합니다.
+                    </p>
+                    <div class="d-grid gap-2">
+                        {% if session.admin_logged_in %}
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                관리자 대시보드
+                            </a>
+                            <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-success">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                로그아웃
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('admin_login') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                관리자 로그인
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 시스템 정보 -->
+<div class="my-3 p-3 bg-body rounded shadow-sm">
+    <h6 class="border-bottom pb-2 mb-3">
+        <i class="fas fa-info-circle"></i> 시스템 정보
+    </h6>
+    
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-database text-info mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">데이터베이스</h6>
+                    <p class="card-text small text-muted">SQLite 기반</p>
+                    <a href="{{ url_for('init_db') }}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-sync"></i> 초기화
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">시스템 설정</h6>
+                    <p class="card-text small text-muted">Flask 웹 애플리케이션</p>
+                    <a href="{{ url_for('update_db_schema') }}" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-wrench"></i> 스키마 업데이트
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt text-success mb-2" style="font-size: 2rem;"></i>
+                    <h6 class="card-title">보안</h6>
+                    <p class="card-text small text-muted">세션 기반 인증</p>
+                    <small class="text-muted">관리자 계정으로 보호됨</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 기능 소개 -->
+<div class="my-3 p-3 bg-body rounded shadow-sm">
+    <h6 class="border-bottom pb-2 mb-3">
+        <i class="fas fa-star"></i> 주요 기능
+    </h6>
+    
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-3">
+            <div class="text-center">
+                <i class="fas fa-mobile-alt text-primary mb-2" style="font-size: 2rem;"></i>
+                <h6>반응형 디자인</h6>
+                <small class="text-muted">모바일, 태블릿, 데스크톱 지원</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="text-center">
+                <i class="fas fa-shopping-cart text-success mb-2" style="font-size: 2rem;"></i>
+                <h6>장바구니 시스템</h6>
+                <small class="text-muted">실시간 주문 관리</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="text-center">
+                <i class="fas fa-chart-bar text-info mb-2" style="font-size: 2rem;"></i>
+                <h6>매출 분석</h6>
+                <small class="text-muted">일/월별 매출 통계</small>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="text-center">
+                <i class="fas fa-file-excel text-warning mb-2" style="font-size: 2rem;"></i>
+                <h6>데이터 관리</h6>
+                <small class="text-muted">Excel 가져오기/내보내기</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .bg-body {
+        background-color: #fff !important;
+    }
+</style>
+{% endblock %} 

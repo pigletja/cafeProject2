@@ -1,0 +1,57 @@
+---
+globs: models.py
+description: SQLAlchemy 모델 및 데이터베이스 스키마 규칙
+---
+
+# 데이터베이스 모델 규칙
+
+## 모델 구조 ([models.py](mdc:cafe_management/models.py) 참조)
+
+### Menu 모델
+- `id`: Primary Key (Integer, autoincrement)
+- `name`: 메뉴명 (String, 100자, NOT NULL)
+- `category`: 카테고리 (String, 50자, NOT NULL)
+- `price`: 가격 (Float, NOT NULL)
+- `description`: 설명 (Text, nullable)
+- `image`: 이미지 파일명 (String, nullable)
+- `temperature_option`: 온도 옵션 (String, default='both')
+- `display_order`: 표시 순서 (Integer, default=9999)
+- `is_soldout`: 품절 여부 (Boolean, default=False)
+
+### Order 모델
+- `id`: Primary Key (Integer, autoincrement)
+- `order_date`: 주문일시 (DateTime, default=now)
+- `status`: 주문 상태 (String, default='pending')
+- `total_amount`: 총 금액 (Integer, NOT NULL)
+- `customer_name`: 고객명 (String, 50자, NOT NULL)
+- `delivery_location`: 배달 위치 (String, 100자, NOT NULL)
+- `delivery_time`: 배달 시간 (String, nullable)
+- `order_request`: 주문 요청사항 (Text, nullable)
+
+### OrderItem 모델
+- `id`: Primary Key (Integer)
+- `order_id`: Foreign Key to Order (NOT NULL)
+- `menu_id`: Foreign Key to Menu (NOT NULL)
+- `quantity`: 수량 (Integer, NOT NULL)
+- `subtotal`: 소계 (Float, NOT NULL)
+- `special_request`: 특별 요청 (Text, nullable)
+- `temperature`: 온도 (String, default='ice')
+
+## 관계 설정
+- Order ↔ OrderItem: 일대다 (cascade='all, delete-orphan')
+- Menu ↔ OrderItem: 일대다 (lazy=True)
+
+## 메서드 규칙
+- 모든 모델에 `__repr__()` 메서드 정의
+- 모든 모델에 `to_dict()` 메서드 정의 (JSON 직렬화용)
+- 타임스탬프: `created_at`, `updated_at` 자동 관리
+
+## 네이밍 규칙
+- 테이블명: `cafe_` 접두사 사용 (예: `cafe_menu`, `cafe_order`)
+- 컬럼명: snake_case 사용
+- Foreign Key: `{table}_id` 형식
+
+## 데이터 무결성
+- NOT NULL 제약 조건 적절히 사용
+- 기본값 설정 필수
+- 문자열 길이 제한 명시

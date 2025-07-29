@@ -1,0 +1,64 @@
+---
+globs: *.js,*.html
+description: JavaScript 개발 컨벤션 및 AJAX 통신 규칙
+---
+
+# JavaScript 개발 규칙
+
+## 전역 함수 (base.html에 정의됨)
+- `showAlert(message, type)`: 사용자에게 알림 표시
+- `formatCurrency(amount)`: 숫자를 통화 형식으로 변환
+- `confirmAction(message)`: 확인 대화상자
+- `handleAjaxError(error)`: AJAX 에러 처리
+
+## AJAX 통신 규칙
+```javascript
+// 표준 fetch 패턴
+fetch('/admin/api/endpoint', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        showAlert('성공 메시지', 'success');
+    } else {
+        showAlert('오류: ' + data.error, 'danger');
+    }
+})
+.catch(error => handleAjaxError(error));
+```
+
+## DOM 조작 규칙
+- `document.querySelector()` 사용 권장
+- `addEventListener()` 로 이벤트 바인딩
+- `innerHTML` 보다는 `textContent` 안전성 고려
+
+## 폼 처리
+- `preventDefault()` 로 기본 제출 막기
+- `FormData` 객체로 파일 업로드
+- 클라이언트 사이드 검증 후 서버 검증
+
+## 장바구니 관리 (user/menu.html, user/cart.html)
+- `addToCart(menuId, quantity, temperature, specialRequest)`
+- `updateCartItem(menuId, quantity)`
+- `removeFromCart(menuId)`
+- `clearCart()`
+
+## 관리자 기능 (admin 페이지들)
+- `updateOrderStatus(orderId, status)`: 주문 상태 변경
+- `deleteOrder(orderId)`: 주문 삭제
+- `toggleSoldout(menuId)`: 품절 상태 토글
+
+## 에러 처리
+- try-catch 블록 사용
+- 네트워크 오류와 서버 오류 구분
+- 사용자 친화적 에러 메시지
+
+## 성능 고려사항
+- debounce 패턴으로 검색 기능 최적화
+- 이미지 로딩 시 placeholder 표시
+- AJAX 요청 중 로딩 상태 표시
